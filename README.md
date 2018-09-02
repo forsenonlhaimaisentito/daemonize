@@ -1,19 +1,18 @@
 # daemonize
-##### Executes a program as detached from its parent
+## Detachedly execute a program from its parent
 
-----
+This utility allows programs to run as children of `init`, which can be useful
+if you don't care about a program's text output and you want to free the shell,
+as in cases of GUI programs.
 
-This program allows to run programs as children of init,
-it can be useful if you don't care about a program's text output
-and you want to free the shell, for example if you run a GUI program.
+## Usage
+### Build the program
 
-### How to use
+```
+make
+```
 
-#### Build the program
-
-`make`
-
-#### Run something with it
-
-`./daemonize program arg1 arg2 arg3 ...`
-
+### Run it with something
+```
+./daemonize program arg1 arg2 arg3 ...
+```
