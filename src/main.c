@@ -104,18 +104,9 @@ int main(int argc, char **argv) {
 				break;
 		}
 	} while (retopt > -1);
-
-	if (optind >= argc) {
-		print_usage(argv, longopts);
-		return EXIT_FAILURE;
-	}
 	
 	/* Consume the remaining non-option arguments from getopt_long() */
-	
-	/* Copy the command filename from the first remaining non-option argument*/
 	strncpy(pargs.command, argv[optind], NAME_MAX);
-	
-	
 	/* If other non-option argument values are left besides the filename, we
 	 * add them to pargs.arguments (whilst also including the filename value,
 	 * hence pargs.command == pargs.arguments if the if-condition holds true)
