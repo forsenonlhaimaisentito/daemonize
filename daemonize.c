@@ -22,12 +22,19 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <getopt.h>
+#include <limits.h>
 
 
 #ifndef DEVNULL
 #define DEVNULL "/dev/null"
 #endif /* DEVNULL */
 
+// The permissions assigned to the redirection files
+#define RED_PERMS S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH
+
+#define OPT_OUTRED 'o'
+#define OPT_ERRRED 'e'
 
 /* 
  * FIXME: This will only work in GNU CPP, because of
@@ -43,23 +50,69 @@
 		exit(EXIT_FAILURE);							\
 	} while (0)										
 
-static void print_usage();
-
 static char *name;
 
 
 int main(int argc, char **argv) {
+	int nullfd, outredfd, errredfd;
 	int old_errno;
 	pid_t child;
 	struct sigaction sa;
 
+	int retopt = -1;
+	struct {
+		char command[NAME_MAX];
+		char outred[NAME_MAX];
+		char errred[NAME_MAX];
+
+		char *const *arguments;
+	} pargs = {"", DEVNULL, DEVNULL, NULL};
+
+	int optindex;
+	char const *shortopts = "+ o: e: c:";
+	const struct option longopts[] = {
+		{"out", required_argument, NULL, OPT_OUTRED},
+		{"err", required_argument, NULL, OPT_ERRRED}
+	};
+
 	name = argv[0];
-	
-	if (argc < 2){
-		print_usage();
-		return EXIT_SUCCESS;
+
+	do {
+		retopt = getopt_long(argc, argv, shortopts, longopts, &optindex);
+
+		switch (retopt) {
+			case OPT_OUTRED:
+				strncpy(pargs.outred, optarg, NAME_MAX);
+				break;
+			case OPT_ERRRED:
+				strncpy(pargs.errred, optarg, NAME_MAX);
+				break;
+			case -1:
+			default:
+				break;
+		}
+	} while (retopt > -1);
+
+	/*
+	 * Consume the remaining non-option arguments from getopt_long().
+	 * TO-DO: here is what the man-page reads about argv:
+	 * «[...] The first argument, by convention, should point to the filename
+	 * associated with the file being executed.  The array of pointers must be
+	 * terminated by a null pointer. [...]»
+	 * So shall `pargs.arguments` actually point to the name of the file, and
+	 * not just the argument(s) coming next?
+	 **/
+	// Copy the command filename from the first remaining non-option argument
+	if (optind < argc) {
+		strncpy(pargs.command, argv[optind], NAME_MAX);
 	}
-	
+	// If other non-option argument values are left besides the filename, we
+	// add them to pargs.arguments (whilst also including the filename value,
+	// hence pargs.command == pargs.arguments if the if-condition holds true)
+	if (optind + 1 < argc) {
+		pargs.arguments = argv + optind;
+	}
+
 	if ((child = fork()) == 0) {
 		/* Ignore SIGHUP */
 		memset(&sa, 0, sizeof(sa));
@@ -71,28 +124,31 @@ int main(int argc, char **argv) {
 			errx("can't create a new session");
 		}
 
-		/* Redirect I/O to /dev/null open for writing */
-		if ((fd = open(DEVNULL, O_WRONLY)) < 0) {
+		/* Redirect input to /dev/null open for writing */
+		if ((nullfd = open(DEVNULL, O_WRONLY)) < 0)
 			errx("can't open %s", DEVNULL);
-		}
+		if (isatty(STDIN_FILENO))
+			dup2(nullfd, STDIN_FILENO);
 
-		if (isatty(STDIN_FILENO)){
-			dup2(fd, STDIN_FILENO);
-		}
+		if ((outredfd = open(pargs.outred, O_WRONLY | O_CREAT, RED_PERMS)) < 0)
+			errx("can't open %s", pargs.outred);
+		if (isatty(STDOUT_FILENO))
+			dup2(outredfd, STDOUT_FILENO);
 
-		if (isatty(STDOUT_FILENO)){
-			dup2(fd, STDOUT_FILENO);
-		}
-
-		if (isatty(STDERR_FILENO)){
-			dup2(STDOUT_FILENO, STDERR_FILENO);
-		}
+		if ((errredfd = open(pargs.errred, O_WRONLY | O_CREAT, RED_PERMS)) < 0)
+			errx("can't open %s", pargs.errred);
+		if (isatty(STDERR_FILENO))
+			dup2(errredfd, STDERR_FILENO);
 
 		/* Execute target command */
-		if (execvp(argv[1], &argv[1]) < 0) {
+		if (execvp(pargs.command, pargs.arguments) < 0) {
 			/* close() may alter errno */
 			old_errno = errno;
-			close(fd);
+
+			close(nullfd);
+			close(outredfd);
+			close(errredfd);
+
 			errno = old_errno;
 			errx("can't exec");
 		}
@@ -101,8 +157,4 @@ int main(int argc, char **argv) {
 	}
 	
 	return EXIT_SUCCESS;
-}
-
-static void print_usage(){
-	fprintf(stderr, "Usage: %s COMMAND\n", name);
 }
