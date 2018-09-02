@@ -153,15 +153,15 @@ int main(int argc, char **argv) {
 
 
 static void print_usage(char **argv, struct option const *longopts) {
-	printf(
+	fprintf(stderr,
 		"%s: [-%c --%s <filename>] [-%c --%s <filename>] <CMD>\n",
 		argv[0], longopts[0].val, longopts[0].name, longopts[1].val,
 		longopts[1].name
 	);
-	printf(
+	fprintf(stderr,
 		"%s: [-%c --%s]\n", argv[0], longopts[2].val, longopts[2].name
 	);
-	printf(
+	fprintf(stderr,
 		"%s: [-%c --%s]\n", argv[0], longopts[3].val, longopts[3].name
 	);
 }
