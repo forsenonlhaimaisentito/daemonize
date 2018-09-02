@@ -35,6 +35,8 @@
 
 #define OPT_OUTRED 'o'
 #define OPT_ERRRED 'e'
+#define OPT_HELP 'h'
+#define OPT_VERSION 'v'
 
 /* 
  * FIXME: This will only work in GNU CPP, because of
@@ -51,6 +53,9 @@
 	} while (0)										
 
 static char *name;
+static char *version = "v0.1";
+
+static void print_usage(char **, struct option const *);
 
 
 int main(int argc, char **argv) {
@@ -69,10 +74,12 @@ int main(int argc, char **argv) {
 	} pargs = {"", DEVNULL, DEVNULL, NULL};
 
 	int optindex;
-	char const *shortopts = "+ o: e: c:";
+	char const *shortopts = "+ h v o: e:";
 	const struct option longopts[] = {
 		{"out", required_argument, NULL, OPT_OUTRED},
-		{"err", required_argument, NULL, OPT_ERRRED}
+		{"err", required_argument, NULL, OPT_ERRRED},
+		{"help", no_argument, NULL, OPT_HELP},
+		{"version", no_argument, NULL, OPT_VERSION},
 	};
 
 	name = argv[0];
@@ -87,6 +94,12 @@ int main(int argc, char **argv) {
 			case OPT_ERRRED:
 				strncpy(pargs.errred, optarg, NAME_MAX);
 				break;
+			case OPT_HELP:
+				print_usage(argv, longopts);
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				puts(version);
+				exit(EXIT_SUCCESS);
 			case -1:
 			default:
 				break;
@@ -101,7 +114,7 @@ int main(int argc, char **argv) {
 	 * terminated by a null pointer. [...]»
 	 * So shall `pargs.arguments` actually point to the name of the file, and
 	 * not just the argument(s) coming next?
-	 **/
+	 */
 	// Copy the command filename from the first remaining non-option argument
 	if (optind < argc) {
 		strncpy(pargs.command, argv[optind], NAME_MAX);
@@ -157,4 +170,19 @@ int main(int argc, char **argv) {
 	}
 	
 	return EXIT_SUCCESS;
+}
+
+
+static void print_usage(char **argv, struct option const *longopts) {
+	printf(
+		"%s: [-%c --%s <filename>] [-%c --%s <filename>] <CMD>\n",
+		argv[0], longopts[0].val, longopts[0].name, longopts[1].val,
+		longopts[1].name
+	);
+	printf(
+		"%s: [-%c --%s]\n", argv[0], longopts[2].val, longopts[2].name
+	);
+	printf(
+		"%s: [-%c --%s]\n", argv[0], longopts[3].val, longopts[3].name
+	);
 }
