@@ -9,8 +9,17 @@ as in cases of GUI programs.
 ### Build the program
 
 ```
-make
+./autogen.sh && ./configure && make
 ```
+
+### Install the program (optional)
+```
+make install
+```
+
+Use the --prefix option of configure if you want a custom
+install location.
+
 
 ### Run it with something
 ```
