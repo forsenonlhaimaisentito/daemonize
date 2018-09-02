@@ -23,9 +23,11 @@
 #include <unistd.h>
 #include <signal.h>
 
+
 #ifndef DEVNULL
 #define DEVNULL "/dev/null"
 #endif /* DEVNULL */
+
 
 /* 
  * FIXME: This will only work in GNU CPP, because of
@@ -33,7 +35,7 @@
  */
 #define errx(fmt, ...)  do {						\
 		fprintf(stderr, "%s: ", name);				\
-		if (strlen(fmt)){							\
+		if (strlen(fmt)) {							\
 			fprintf(stderr, fmt, ##__VA_ARGS__);	\
 			fprintf(stderr, ": ");					\
 		}											\
@@ -45,8 +47,8 @@ static void print_usage();
 
 static char *name;
 
-int main(int argc, char **argv){
-	int fd;
+
+int main(int argc, char **argv) {
 	int old_errno;
 	pid_t child;
 	struct sigaction sa;
@@ -58,19 +60,19 @@ int main(int argc, char **argv){
 		return EXIT_SUCCESS;
 	}
 	
-	if ((child = fork()) == 0){
+	if ((child = fork()) == 0) {
 		/* Ignore SIGHUP */
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_IGN;
 		sigaction(SIGHUP, &sa, NULL);
 
 		/* Create a new session */
-		if (setsid() < 0){
+		if (setsid() < 0) {
 			errx("can't create a new session");
 		}
 
 		/* Redirect I/O to /dev/null open for writing */
-		if ((fd = open(DEVNULL, O_WRONLY)) < 0){
+		if ((fd = open(DEVNULL, O_WRONLY)) < 0) {
 			errx("can't open %s", DEVNULL);
 		}
 
@@ -87,14 +89,14 @@ int main(int argc, char **argv){
 		}
 
 		/* Execute target command */
-		if (execvp(argv[1], &argv[1]) < 0){
+		if (execvp(argv[1], &argv[1]) < 0) {
 			/* close() may alter errno */
 			old_errno = errno;
 			close(fd);
 			errno = old_errno;
 			errx("can't exec");
 		}
-	} else if (child < 0){
+	} else if (child < 0) {
 		errx("fork");
 	}
 	
