@@ -30,7 +30,7 @@
 #define DEVNULL "/dev/null"
 #endif /* DEVNULL */
 
-// The permissions assigned to the redirection files
+/* The permissions assigned to the redirection files */
 #define RED_PERMS S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH
 
 #define OPT_OUTRED 'o'
@@ -106,22 +106,16 @@ int main(int argc, char **argv) {
 		}
 	} while (retopt > -1);
 
-	/*
-	 * Consume the remaining non-option arguments from getopt_long().
-	 * TO-DO: here is what the man-page reads about argv:
-	 * «[...] The first argument, by convention, should point to the filename
-	 * associated with the file being executed.  The array of pointers must be
-	 * terminated by a null pointer. [...]»
-	 * So shall `pargs.arguments` actually point to the name of the file, and
-	 * not just the argument(s) coming next?
-	 */
-	// Copy the command filename from the first remaining non-option argument
+	/* Consume the remaining non-option arguments from getopt_long() */
+	/* Copy the command filename from the first remaining non-option argument*/
 	if (optind < argc) {
 		strncpy(pargs.command, argv[optind], NAME_MAX);
 	}
-	// If other non-option argument values are left besides the filename, we
-	// add them to pargs.arguments (whilst also including the filename value,
-	// hence pargs.command == pargs.arguments if the if-condition holds true)
+	
+	/* If other non-option argument values are left besides the filename, we
+	 * add them to pargs.arguments (whilst also including the filename value,
+	 * hence pargs.command == pargs.arguments if the if-condition holds true)
+	 */
 	if (optind + 1 < argc) {
 		pargs.arguments = argv + optind;
 	}
