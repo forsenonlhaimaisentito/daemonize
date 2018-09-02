@@ -42,14 +42,14 @@
  * FIXME: This will only work in GNU CPP, because of
  * the nonstandard ## comma deletion feature
  */
-#define errx(fmt, ...)  do {						\
-		fprintf(stderr, "%s: ", name);				\
-		if (strlen(fmt)) {							\
-			fprintf(stderr, fmt, ##__VA_ARGS__);	\
-			fprintf(stderr, ": ");					\
-		}											\
-		fprintf(stderr, "%s\n", strerror(errno));	\
-		exit(EXIT_FAILURE);							\
+#define errx(fmt, ...)  do { \
+		fprintf(stderr, "%s: ", name); \
+		if (strlen(fmt)) { \
+			fprintf(stderr, fmt, ##__VA_ARGS__); \
+			fprintf(stderr, ": "); \
+		} \
+		fprintf(stderr, "%s\n", strerror(errno)); \
+		exit(EXIT_FAILURE); \
 	} while (0)										
 
 static char *name;
