@@ -133,6 +133,9 @@ int main(int argc, char **argv) {
 			errx("can't create a new session");
 		}
 
+		/* Keep a reference to the original stderr for error reporting */
+		stderr = fdopen(dup(STDERR_FILENO), "w+");
+
 		redirect_fd(STDIN_FILENO, NULL, O_RDONLY);
 		redirect_fd(STDOUT_FILENO, pargs.outred, O_WRONLY | O_CREAT);
 		redirect_fd(STDERR_FILENO, pargs.errred, O_WRONLY | O_CREAT);
