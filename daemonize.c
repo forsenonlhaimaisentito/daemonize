@@ -53,14 +53,13 @@
 	} while (0)										
 
 static char *name;
-static char *version = "v0.1";
+static const char *version = "v0.1";
 
 static void print_usage(char **, struct option const *);
+static void redirect_fd(int, const char *, int);
 
 
 int main(int argc, char **argv) {
-	int nullfd, outredfd, errredfd;
-	int old_errno;
 	pid_t child;
 	struct sigaction sa;
 
@@ -71,7 +70,7 @@ int main(int argc, char **argv) {
 		char errred[NAME_MAX];
 
 		char *const *arguments;
-	} pargs = {"", DEVNULL, DEVNULL, NULL};
+	} pargs = {"", "", "", NULL};
 
 	int optindex;
 	char const *shortopts = "+ h v o: e:";
@@ -131,32 +130,12 @@ int main(int argc, char **argv) {
 			errx("can't create a new session");
 		}
 
-		/* Redirect input to /dev/null open for writing */
-		if ((nullfd = open(DEVNULL, O_WRONLY)) < 0)
-			errx("can't open %s", DEVNULL);
-		if (isatty(STDIN_FILENO))
-			dup2(nullfd, STDIN_FILENO);
-
-		if ((outredfd = open(pargs.outred, O_WRONLY | O_CREAT, RED_PERMS)) < 0)
-			errx("can't open %s", pargs.outred);
-		if (isatty(STDOUT_FILENO))
-			dup2(outredfd, STDOUT_FILENO);
-
-		if ((errredfd = open(pargs.errred, O_WRONLY | O_CREAT, RED_PERMS)) < 0)
-			errx("can't open %s", pargs.errred);
-		if (isatty(STDERR_FILENO))
-			dup2(errredfd, STDERR_FILENO);
+		redirect_fd(STDIN_FILENO, NULL, O_RDONLY);
+		redirect_fd(STDOUT_FILENO, pargs.outred, O_WRONLY | O_CREAT);
+		redirect_fd(STDERR_FILENO, pargs.errred, O_WRONLY | O_CREAT);
 
 		/* Execute target command */
 		if (execvp(pargs.command, pargs.arguments) < 0) {
-			/* close() may alter errno */
-			old_errno = errno;
-
-			close(nullfd);
-			close(outredfd);
-			close(errredfd);
-
-			errno = old_errno;
 			errx("can't exec");
 		}
 	} else if (child < 0) {
@@ -179,4 +158,24 @@ static void print_usage(char **argv, struct option const *longopts) {
 	printf(
 		"%s: [-%c --%s]\n", argv[0], longopts[3].val, longopts[3].name
 	);
+}
+
+/* If target is not NULL or an empty string, this function
+ * redirects fd to it, otherwise, if fd is a TTY, 
+ * it redirects fd to DEVNULL.
+ */
+static void redirect_fd(int fd, const char *target, int flags) {
+	int target_fd;
+
+	if (target != NULL && strlen(target)){
+		if ((target_fd = open(target, flags, RED_PERMS)) < 0)
+			errx("can't open %s", target);
+	} else if (isatty(fd)){
+		if ((target_fd = open(DEVNULL, flags, RED_PERMS)) < 0)
+			errx("can't open %s", DEVNULL);
+	} else {
+		return;
+	}
+
+	dup2(target_fd, fd);
 }
