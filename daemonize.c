@@ -65,9 +65,9 @@ int main(int argc, char **argv) {
 
 	int retopt = -1;
 	struct {
-		char command[NAME_MAX];
-		char outred[NAME_MAX];
-		char errred[NAME_MAX];
+		char command[PATH_MAX];
+		char outred[PATH_MAX];
+		char errred[PATH_MAX];
 
 		char *const *arguments;
 	} pargs = {"", "", "", NULL};
@@ -88,10 +88,10 @@ int main(int argc, char **argv) {
 
 		switch (retopt) {
 			case OPT_OUTRED:
-				strncpy(pargs.outred, optarg, NAME_MAX);
+				strncpy(pargs.outred, optarg, PATH_MAX);
 				break;
 			case OPT_ERRRED:
-				strncpy(pargs.errred, optarg, NAME_MAX);
+				strncpy(pargs.errred, optarg, PATH_MAX);
 				break;
 			case OPT_HELP:
 				print_usage(argv, longopts);
